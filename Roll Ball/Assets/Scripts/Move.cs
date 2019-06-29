@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.IO.Ports;
+using System.Threading;
 
 public class Move : MonoBehaviour
 {
     public string portName = "COM5";
     public int baundRate = 9600;
     private SerialPort mySerial;
+    private Thread myThread;
+    public static int value;
 
     public float speed;
     public Text countText;
@@ -21,11 +24,14 @@ public class Move : MonoBehaviour
     {
         mySerial = new SerialPort(portName, baundRate);
         mySerial.Open();
+        myThread = new Thread(Read);
+        myThread.Start();
 
         rb = GetComponent<Rigidbody>();
         count = 0;
         SetCountText();
     }
+
     void FixedUpdate()
     {
         float moveHorizontal = Input.GetAxis("Horizontal");
@@ -34,6 +40,7 @@ public class Move : MonoBehaviour
         Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
 
         rb.AddForce(movement * speed);
+        Debug.Log(value);
     }
 
     void OnTriggerEnter(Collider other)
@@ -46,9 +53,18 @@ public class Move : MonoBehaviour
             SetCountText();
         }
     }
+
     void OnDestroy()
     {
         mySerial.Close();
+    }
+
+    void Read()
+    {
+        while (mySerial.IsOpen)
+        {
+            value = int.Parse(mySerial.ReadLine());
+        }
     }
 
     void SetCountText()
@@ -59,4 +75,5 @@ public class Move : MonoBehaviour
             winText.text = "You Win!";
         }
     }
+
 }
